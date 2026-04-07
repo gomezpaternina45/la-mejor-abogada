@@ -1412,4 +1412,18 @@ const config = {
     scene: [BootScene, TitleScene, GameScene],
 };
 
-new Phaser.Game(config);
+const game = new Phaser.Game(config);
+
+// Forzar refresh del escalado cuando cambia el viewport (iOS Safari, barra de direcciones)
+function refreshScale() {
+    if (game && game.scale) game.scale.refresh();
+}
+window.addEventListener('resize', refreshScale);
+window.addEventListener('orientationchange', refreshScale);
+if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', refreshScale);
+}
+// También al cabo de unos segundos por si la barra de direcciones cambia
+setTimeout(refreshScale, 100);
+setTimeout(refreshScale, 500);
+setTimeout(refreshScale, 1500);
