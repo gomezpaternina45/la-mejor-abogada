@@ -24,6 +24,7 @@ class BootScene extends Phaser.Scene {
     constructor() { super('Boot'); }
 
     preload() {
+        this.load.image('principe', 'assets/sprites/principe.png');
         this.load.image('p_idle',   'assets/sprites/player_idle.png');
         this.load.image('p_walk1',  'assets/sprites/player_walk_1.png');
         this.load.image('p_walk2',  'assets/sprites/player_walk_2.png');
@@ -1227,6 +1228,11 @@ class GameScene extends Phaser.Scene {
         this.player.play('idle', true);
         window.SFX.win();
         const next = this.levelIndex + 1;
+        if (this.level.finalLevel) {
+            // Escena final del rescate del príncipe
+            this.time.delayedCall(800, () => this.startEndingScene());
+            return;
+        }
         if (next >= window.LEVELS.length) {
             this.msgText.setText('¡GANASTE EL JUEGO!');
             this.time.delayedCall(3000, () => this.scene.start('Title'));
@@ -1240,6 +1246,115 @@ class GameScene extends Phaser.Scene {
                 });
             });
         }
+    }
+
+    startEndingScene() {
+        // Bloquear input de juego
+        this.endingActive = true;
+        // Posicionar al príncipe a la derecha del jugador, esperándole frente al castillo
+        const px = this.player.x + 80;
+        const py = GROUND_Y - 50;
+        this.principe = this.add.sprite(px, py, 'principe').setOrigin(0.5, 1);
+        this.principe.setScale(this.player.scaleX);
+        // Aparece con tween
+        this.principe.setAlpha(0);
+        this.tweens.add({
+            targets: this.principe,
+            alpha: 1,
+            y: py,
+            duration: 600,
+        });
+        // Mira al jugador
+        this.principe.setFlipX(true);
+        this.player.setFlipX(false);
+
+        // Mensaje "¡RESCATASTE AL PRÍNCIPE!"
+        const banner = this.add.text(GAME_W / 2, 100, '¡RESCATASTE AL PRÍNCIPE!', {
+            fontFamily: FONT, fontSize: '28px', color: '#ffd54a',
+            stroke: '#000', strokeThickness: 5,
+        }).setOrigin(0.5).setScrollFactor(0).setDepth(20);
+        this.tweens.add({
+            targets: banner, scale: 1.1, yoyo: true, repeat: -1, duration: 600,
+        });
+
+        // Empezar fuegos artificiales
+        this.fireworksTimer = this.time.addEvent({
+            delay: 350,
+            loop: true,
+            callback: () => this.spawnFirework(),
+        });
+
+        // Después de 2.5s mostrar el poema
+        this.time.delayedCall(2500, () => this.showPoem());
+    }
+
+    spawnFirework() {
+        const cam = this.cameras.main;
+        const cx = cam.scrollX + Phaser.Math.Between(80, GAME_W - 80);
+        const cy = Phaser.Math.Between(80, 280);
+        const colors = [0xff5577, 0xffaa00, 0xffee44, 0x55ff77, 0x55aaff, 0xff77ff, 0xffffff];
+        const color = Phaser.Utils.Array.GetRandom(colors);
+        // Estela ascendente
+        const trail = this.add.circle(cx, cy + 200, 3, color);
+        this.tweens.add({
+            targets: trail, y: cy, alpha: 0, duration: 400,
+            onComplete: () => trail.destroy(),
+        });
+        // Explosión
+        this.time.delayedCall(400, () => {
+            const N = 18;
+            for (let i = 0; i < N; i++) {
+                const angle = (i / N) * Math.PI * 2;
+                const speed = Phaser.Math.Between(80, 140);
+                const p = this.add.circle(cx, cy, 3, color);
+                this.tweens.add({
+                    targets: p,
+                    x: cx + Math.cos(angle) * speed,
+                    y: cy + Math.sin(angle) * speed,
+                    alpha: 0,
+                    duration: 900,
+                    onComplete: () => p.destroy(),
+                });
+            }
+            window.SFX.coin();
+        });
+    }
+
+    showPoem() {
+        // Caja semitransparente para el poema
+        const box = this.add.rectangle(GAME_W / 2, GAME_H / 2 + 20, GAME_W - 80, 280, 0x000000, 0.65)
+            .setStrokeStyle(3, 0xffd54a)
+            .setScrollFactor(0)
+            .setDepth(30);
+
+        const lines = [
+            'Para ti, mi princesa abogada:',
+            '',
+            'Cruzaste mundos y enfrentaste mil peligros,',
+            'saltando obstáculos por mi corazón.',
+            'Tu valentía brilla más que mil estrellas,',
+            'y tu sonrisa es mi mayor bendición.',
+            '',
+            'Eres mi heroína, mi razón, mi destino.',
+            'Gracias por elegirme cada día.',
+            '',
+            'TE AMO ❤',
+        ];
+        const text = this.add.text(GAME_W / 2, GAME_H / 2 + 20, '', {
+            fontFamily: FONT, fontSize: '16px', color: '#ffffff',
+            stroke: '#000', strokeThickness: 3,
+            align: 'center', lineSpacing: 6,
+        }).setOrigin(0.5).setScrollFactor(0).setDepth(31);
+
+        // Escribir línea por línea (efecto máquina de escribir)
+        let i = 0;
+        const writeNext = () => {
+            if (i > lines.length) return;
+            text.setText(lines.slice(0, i).join('\n'));
+            i++;
+            if (i <= lines.length) this.time.delayedCall(450, writeNext);
+        };
+        writeNext();
     }
 
     update() {

@@ -1,27 +1,17 @@
 /* Datos de niveles. Coordenadas en píxeles del mundo.
  *
- * MEDIDAS DEL JUGADOR (calculadas):
- *   Pequeño: 28 (W) × 58 (H) px, head Y desde el suelo = 434
- *   Grande:  32 (W) × 72 (H) px, head Y desde el suelo = 420
- *   Suelo (feet) Y = 492
+ * REGLAS DE COLOCACIÓN (verificadas con tools/check_levels.js):
+ *  - Suelo principal: y=492 (jugador grande parado: cabeza en y=420)
+ *  - Bloques en suelo (bonk salto simple): y=290 (bottom=306) → cabeza grande 316: ✓
+ *  - Si una plataforma está a y=380 (top=372), un bloque encima debe tener
+ *    block.bottom <= 372-80 = 292, es decir block.y <= 276.
+ *  - Plataformas pisables NUNCA tienen bloques justo encima a la misma X
+ *    si la separación es < 80 px.
  *
- * SALTOS (con GRAVITY=1500, JUMP=-560, DOUBLE_JUMP=-480):
- *   Salto simple: feet peak Y = 388, head pequeño = 330, head grande = 316
- *   Doble salto:  feet peak Y = 311, head pequeño = 253, head grande = 239
- *
- * REGLAS PARA POSICIONAR BLOQUES (32×32 centrados en y):
- *   - Para BONK con SALTO SIMPLE (ambos tamaños):
- *       block.y >= 316  (block bottom = 332 ≥ head grande 316)
- *   - Para BONK con DOBLE SALTO (ambos tamaños):
- *       block.y >= 239
- *   - Bloques en plataformas: block.y debe estar a (platformTop - 60) o más alto
- *     para que el jugador grande pueda saltar parado en la plataforma sin chocarse
- *     con el bloque de cabeza inmediatamente.
- *
- * USO ESTÁNDAR:
- *   - Bloques en suelo (bonk simple): y = 330
- *   - Bloques sobre platform y=380:   y = 200 (saltando desde la plataforma)
- *   - Pasaje libre entre obstáculos: separación horizontal >= 80 px
+ * BONUS (suelo a y=1000 mundo, coords relativas hacia ARRIBA):
+ *  - Bloques alcanzables desde suelo bonus: bonus_y entre 100 y 200
+ *  - Plataformas bonus en y=80: top mundo = 1000-80-8 = 912
+ *      → un bloque encima debe estar a bonus_y >= 80 + 80 = 160
  */
 const LEVELS = [
     // ───────────────── WORLD 1-1 ─────────────────
@@ -37,27 +27,27 @@ const LEVELS = [
             { x: 3400, y: 380, w: 128 },
             { x: 4500, y: 380, w: 96 },
         ],
-        // Bloques sólidos normales (no rompibles, no power-up)
+        // Bloques sólidos en zonas SIN plataforma encima
         solids: [
-            { x: 600,  y: 330 },
-            { x: 632,  y: 330 },
-            { x: 1700, y: 330 },
-            { x: 3300, y: 330 },
+            { x: 600, y: 290 },
+            { x: 632, y: 290 },
+            { x: 1700, y: 290 },
+            { x: 3300, y: 290 },
         ],
-        // Bricks rompibles (solo big/fuego). Aislados, todos a y=330
+        // Bricks rompibles, en zonas libres del suelo
         bricks: [
-            { x: 1900, y: 330 }, { x: 1932, y: 330 },
-            { x: 3100, y: 330 }, { x: 3132, y: 330 }, { x: 3164, y: 330 },
-            { x: 4250, y: 330 }, { x: 4282, y: 330 },
+            { x: 1900, y: 290 }, { x: 1932, y: 290 },
+            { x: 3100, y: 290 }, { x: 3132, y: 290 }, { x: 3164, y: 290 },
+            { x: 4250, y: 290 }, { x: 4282, y: 290 },
         ],
-        // ? blocks: bonk simple desde el suelo. y=330 garantizado para ambos tamaños
+        // ? blocks en posiciones libres del suelo (no encima de plataformas)
         questionBlocks: [
-            { x: 350,  y: 330 },
-            { x: 700,  y: 330 },
-            { x: 1280, y: 330 },
-            { x: 2400, y: 330 },
-            { x: 3500, y: 330 },
-            { x: 4400, y: 330 },
+            { x: 350,  y: 290 },
+            { x: 700,  y: 290 },
+            { x: 1280, y: 290 },
+            { x: 2400, y: 290 },
+            { x: 3500, y: 290 },
+            { x: 4400, y: 290 },
         ],
         pipes: [
             { x: 1800, h: 64 },
@@ -68,32 +58,32 @@ const LEVELS = [
         bonus: {
             title: 'BONUS 1-1: GRUTA DE ORO',
             width: 900,
-            // ? blocks a y=130 (alcanzables saltando desde el suelo del bonus)
+            // Sin plataformas en bonus 1-1, todo en el suelo
             qblocks: [
                 { x: 200, y: 130 },
                 { x: 350, y: 130 },
                 { x: 500, y: 130 },
+                { x: 700, y: 130 },
             ],
             bricks: [
-                { x: 300, y: 130 },
-                { x: 400, y: 130 },
+                { x: 250, y: 130 }, { x: 282, y: 130 },
+                { x: 450, y: 130 },
                 { x: 600, y: 130 }, { x: 632, y: 130 },
             ],
-            // monedas en el suelo y un poco más arriba (no más de y=80 sin plataforma)
             coins: [
-                [120, 30], [170, 30], [250, 30], [350, 30], [450, 30],
-                [550, 30], [650, 30], [720, 30], [780, 30],
-                [200, 80], [350, 80], [500, 80],
-                [80, 60], [80, 100],
+                [100, 30], [150, 30], [200, 30], [250, 30], [300, 30],
+                [350, 30], [400, 30], [450, 30], [500, 30], [550, 30],
+                [600, 30], [650, 30], [700, 30], [750, 30], [800, 30],
+                [200, 80], [350, 80], [500, 80], [700, 80],
+                [50, 60], [50, 100],
                 [820, 60], [820, 100],
             ],
             exitX: 850,
         },
         coins: [
-            [350, 280], [700, 280], [1280, 280],
-            [2400, 280], [3500, 280], [4400, 280],
-            [880, 340], [1080, 280],
-            [2200, 340], [3400, 340], [4500, 340],
+            [350, 240], [700, 240], [1280, 240],
+            [2400, 240], [3500, 240], [4400, 240],
+            [880, 340], [1080, 280], [2200, 340], [3400, 340], [4500, 340],
             [200, -1], [1300, -1], [2300, -1], [4000, -1],
         ],
         enemies: [
@@ -122,77 +112,70 @@ const LEVELS = [
             { x: 3600, y: 380, w: 128 },
             { x: 4500, y: 380, w: 128 },
         ],
+        // Solids en zonas libres (no encima de plataformas)
         solids: [
-            { x: 300,  y: 330 },
-            { x: 1300, y: 330 },
-            { x: 1332, y: 330 },
-            { x: 2200, y: 330 },
-            { x: 3100, y: 330 },
-            { x: 4000, y: 330 },
-            { x: 4032, y: 330 },
+            { x: 200, y: 290 },
+            { x: 1300, y: 290 }, { x: 1332, y: 290 },
+            { x: 2200, y: 290 },
+            { x: 3100, y: 290 },
+            { x: 4000, y: 290 }, { x: 4032, y: 290 },
         ],
+        // Bricks lejos de plataformas
         bricks: [
-            { x: 1800, y: 330 }, { x: 1832, y: 330 },
-            { x: 2700, y: 330 }, { x: 2732, y: 330 }, { x: 2764, y: 330 },
-            { x: 4500, y: 330 }, { x: 4532, y: 330 },
+            { x: 1400, y: 290 }, { x: 1432, y: 290 },
+            { x: 2300, y: 290 }, { x: 2332, y: 290 },
+            { x: 3200, y: 290 }, { x: 3232, y: 290 },
+            { x: 4100, y: 290 }, { x: 4132, y: 290 },
         ],
         questionBlocks: [
-            { x: 250,  y: 330 },
-            { x: 1100, y: 330 },
-            { x: 2050, y: 330 },
-            { x: 2900, y: 330 },
-            { x: 3850, y: 330 },
-            { x: 4750, y: 330 },
+            { x: 250,  y: 290 },
+            { x: 1200, y: 290 },
+            { x: 2150, y: 290 },
+            { x: 3050, y: 290 },
+            { x: 3950, y: 290 },
+            { x: 4800, y: 290 },
         ],
         pipes: [
-            { x: 1400, h: 64 },
-            { x: 2300, h: 64 },
-            { x: 3200, h: 64 },
-            { x: 4100, h: 64 },
+            { x: 1700, h: 64 },
+            { x: 2600, h: 64 },
+            { x: 3500, h: 64 },
+            { x: 4400, h: 64 },
         ],
-        warpPipe: 2300,
+        warpPipe: 2600,
         bonus: {
             title: 'BONUS 1-2: CRIPTA SECRETA',
             width: 1200,
-            // Plataformas escalonadas a alturas alcanzables (max 100 por salto)
-            platforms: [
-                { x: 250, y: 80,  w: 96 },
-                { x: 450, y: 80,  w: 96 },
-                { x: 650, y: 80,  w: 96 },
-                { x: 850, y: 80,  w: 96 },
-                { x: 350, y: 180, w: 96 },
-                { x: 750, y: 180, w: 96 },
-            ],
-            // ? blocks alcanzables desde el suelo (y=130)
+            // Sin plataformas, solo bloques en el suelo bonus
             qblocks: [
                 { x: 150, y: 130 },
+                { x: 350, y: 130 },
                 { x: 550, y: 130 },
+                { x: 750, y: 130 },
                 { x: 950, y: 130 },
-                // Estos sobre plataformas a y=180, alcanzables desde la plataforma
-                { x: 350, y: 240 },
-                { x: 750, y: 240 },
             ],
             bricks: [
-                { x: 200, y: 130 }, { x: 250, y: 130 },
-                { x: 600, y: 130 }, { x: 650, y: 130 },
-                { x: 1000, y: 130 }, { x: 1050, y: 130 },
+                { x: 200, y: 130 }, { x: 232, y: 130 },
+                { x: 400, y: 130 }, { x: 432, y: 130 },
+                { x: 600, y: 130 }, { x: 632, y: 130 },
+                { x: 800, y: 130 }, { x: 832, y: 130 },
+                { x: 1000, y: 130 }, { x: 1032, y: 130 },
             ],
             solids: [
-                { x: 80, y: 50 }, { x: 112, y: 50 },
-                { x: 1100, y: 50 }, { x: 1132, y: 50 },
+                { x: 80, y: 130 },
+                { x: 1100, y: 130 },
             ],
             coins: [
                 [80, 30], [150, 30], [250, 30], [350, 30], [450, 30],
-                [550, 30], [650, 30], [750, 30], [850, 30], [950, 30], [1050, 30],
-                [250, 130], [450, 130], [650, 130], [850, 130],
-                [350, 230], [750, 230],
-                [60, 80], [1140, 80],
+                [550, 30], [650, 30], [750, 30], [850, 30], [950, 30],
+                [1050, 30], [1100, 30],
+                [150, 80], [350, 80], [550, 80], [750, 80], [950, 80],
+                [50, 60], [1150, 60],
             ],
             exitX: 1130,
         },
         coins: [
-            [250, 280], [1100, 280], [2050, 280],
-            [2900, 280], [3850, 280], [4750, 280],
+            [250, 240], [1200, 240], [2150, 240],
+            [3050, 240], [3950, 240], [4800, 240],
             [400, 340], [1000, 340], [1800, 340],
             [2700, 340], [3600, 340], [4500, 340],
             [180, -1], [950, -1], [3000, -1], [4000, -1], [5000, -1],
@@ -210,11 +193,11 @@ const LEVELS = [
         goalX: 5780,
     },
 
-    // ───────────────── WORLD 1-3 ─────────────────
+    // ───────────────── WORLD 1-3 — RESCATE DEL PRÍNCIPE ─────────────────
     {
         name: '1-3',
         width: 6400,
-        bgColor: '#5dadec',
+        bgColor: '#1a1a3a',
         gaps: [[600, 720], [1300, 1420], [2100, 2220], [2900, 3020], [3700, 3820], [4500, 4620]],
         platforms: [
             { x: 300,  y: 400, w: 80 },
@@ -222,37 +205,35 @@ const LEVELS = [
             { x: 1500, y: 360, w: 120 },
             { x: 2300, y: 360, w: 120 },
             { x: 3100, y: 360, w: 140 },
-            { x: 3700, y: 380, w: 120 },
-            { x: 4350, y: 360, w: 96 },
+            { x: 3800, y: 380, w: 120 },
             { x: 4750, y: 380, w: 128 },
             { x: 5250, y: 360, w: 128 },
         ],
+        // Solids en zonas libres
         solids: [
-            { x: 200,  y: 330 },
-            { x: 232,  y: 330 },
-            { x: 1100, y: 330 },
-            { x: 2000, y: 330 },
-            { x: 2032, y: 330 },
-            { x: 3300, y: 330 },
-            { x: 4150, y: 330 },
-            { x: 5400, y: 330 },
-            { x: 5432, y: 330 },
+            { x: 200, y: 290 },
+            { x: 1100, y: 290 }, { x: 1132, y: 290 },
+            { x: 2000, y: 290 }, { x: 2032, y: 290 },
+            { x: 3300, y: 290 },
+            { x: 4150, y: 290 },
+            { x: 5050, y: 290 },
         ],
         bricks: [
-            { x: 1500, y: 330 }, { x: 1532, y: 330 },
-            { x: 2800, y: 330 }, { x: 2832, y: 330 },
-            { x: 4400, y: 330 }, { x: 4432, y: 330 },
-            { x: 5100, y: 330 }, { x: 5132, y: 330 }, { x: 5164, y: 330 },
+            { x: 1700, y: 290 }, { x: 1732, y: 290 },
+            { x: 2500, y: 290 }, { x: 2532, y: 290 },
+            { x: 3500, y: 290 },
+            { x: 4350, y: 290 }, { x: 4382, y: 290 },
+            { x: 5450, y: 290 }, { x: 5482, y: 290 }, { x: 5514, y: 290 },
         ],
         questionBlocks: [
-            { x: 400,  y: 330 },
-            { x: 1200, y: 330 },
-            { x: 1800, y: 330 },
-            { x: 2500, y: 330 },
-            { x: 3500, y: 330 },
-            { x: 4250, y: 330 },
-            { x: 4900, y: 330 },
-            { x: 5500, y: 330 },
+            { x: 100,  y: 290 },
+            { x: 1200, y: 290 },
+            { x: 1800, y: 290 },
+            { x: 2600, y: 290 },
+            { x: 3400, y: 290 },
+            { x: 4250, y: 290 },
+            { x: 4900, y: 290 },
+            { x: 5550, y: 290 },
         ],
         pipes: [
             { x: 1000, h: 64 },
@@ -263,61 +244,44 @@ const LEVELS = [
         ],
         warpPipe: 3300,
         bonus: {
-            title: 'BONUS 1-3: LABERINTO ANTIGUO',
+            title: 'BONUS 1-3: SALA DEL TESORO',
             width: 1400,
-            // Escalera de plataformas
-            platforms: [
-                { x: 200, y: 80,  w: 80 },
-                { x: 380, y: 80,  w: 80 },
-                { x: 560, y: 80,  w: 80 },
-                { x: 740, y: 80,  w: 80 },
-                { x: 920, y: 80,  w: 80 },
-                { x: 1100, y: 80, w: 80 },
-                { x: 290, y: 180, w: 80 },
-                { x: 650, y: 180, w: 80 },
-                { x: 1010, y: 180, w: 80 },
-                { x: 470, y: 280, w: 80 },
-                { x: 830, y: 280, w: 80 },
-            ],
-            // Niveles: y=130 (suelo), y=240 (sobre plataformas y=180), y=340 (sobre y=280)
+            // Sin plataformas: laberinto plano con muchos bloques
             qblocks: [
-                { x: 100, y: 130 },
-                { x: 600, y: 130 },
-                { x: 1200, y: 130 },
-                { x: 290, y: 240 },
-                { x: 1010, y: 240 },
-                { x: 470, y: 340 },
-                { x: 830, y: 340 },
+                { x: 100,  y: 130 },
+                { x: 300,  y: 130 },
+                { x: 500,  y: 130 },
+                { x: 700,  y: 130 },
+                { x: 900,  y: 130 },
+                { x: 1100, y: 130 },
+                { x: 1300, y: 130 },
             ],
             bricks: [
-                { x: 250, y: 130 }, { x: 300, y: 130 },
-                { x: 700, y: 130 }, { x: 750, y: 130 },
-                { x: 1100, y: 130 }, { x: 1150, y: 130 },
-                { x: 650, y: 240 },
-            ],
-            solids: [
-                { x: 60, y: 50 }, { x: 92, y: 50 },
-                { x: 1300, y: 50 }, { x: 1332, y: 50 },
+                { x: 200, y: 130 }, { x: 232, y: 130 },
+                { x: 400, y: 130 }, { x: 432, y: 130 },
+                { x: 600, y: 130 }, { x: 632, y: 130 },
+                { x: 800, y: 130 }, { x: 832, y: 130 },
+                { x: 1000, y: 130 }, { x: 1032, y: 130 },
+                { x: 1200, y: 130 }, { x: 1232, y: 130 },
             ],
             coins: [
                 [100, 30], [200, 30], [300, 30], [400, 30], [500, 30],
                 [600, 30], [700, 30], [800, 30], [900, 30], [1000, 30],
                 [1100, 30], [1200, 30], [1300, 30],
-                [200, 130], [380, 130], [560, 130], [740, 130], [920, 130], [1100, 130],
-                [290, 230], [650, 230], [1010, 230],
-                [470, 330], [830, 330],
-                [60, 80], [60, 130], [1340, 80], [1340, 130],
+                [100, 80], [300, 80], [500, 80], [700, 80],
+                [900, 80], [1100, 80], [1300, 80],
+                [50, 60], [50, 100], [50, 140],
+                [1350, 60], [1350, 100], [1350, 140],
             ],
             exitX: 1340,
         },
         coins: [
-            [400, 280], [1200, 280], [1800, 280],
-            [2500, 280], [3500, 280], [4250, 280],
-            [4900, 280], [5500, 280],
+            [100, 240], [1200, 240], [1800, 240], [2600, 240],
+            [3400, 240], [4250, 240], [4900, 240], [5550, 240],
             [300, 360], [800, 340], [1500, 320],
-            [2300, 320], [3100, 320], [3700, 340],
-            [4350, 320], [4750, 340], [5250, 320],
-            [180, -1], [1200, -1], [2400, -1], [3300, -1], [4500, -1], [5400, -1],
+            [2300, 320], [3100, 320], [3800, 340],
+            [4750, 340], [5250, 320],
+            [180, -1], [1200, -1], [2400, -1], [3200, -1], [4400, -1], [5400, -1],
         ],
         enemies: [
             { type: 'goomba', x: 400,  minX: 280,  maxX: 580 },
@@ -331,7 +295,9 @@ const LEVELS = [
         ],
         stairs:   { x: 5680, steps: 8 },
         flagpole: { x: 6200 },
-        goalX: 6400,
+        goalX: 6360,
+        // Marcador para mostrar la escena romántica al ganar este nivel
+        finalLevel: true,
     },
 ];
 
