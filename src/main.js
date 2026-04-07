@@ -285,7 +285,10 @@ class TitleScene extends Phaser.Scene {
             fontFamily: FONT, fontSize: '14px', color: '#aaa',
         }).setOrigin(0.5);
 
+        let started = false;
         const start = () => {
+            if (started) return;
+            started = true;
             window.SFX.select();
             this.scene.start('Game', { levelIndex: 0, lives: 3, score: 0 });
         };
@@ -295,6 +298,8 @@ class TitleScene extends Phaser.Scene {
         this.input.keyboard.on('keydown-M', () => {
             window.SFX.muted = !window.SFX.muted;
         });
+        // Tap/click en cualquier parte para empezar (móvil)
+        this.input.once('pointerdown', start);
     }
 }
 
@@ -576,8 +581,11 @@ class GameScene extends Phaser.Scene {
     }
 
     createTouchControls() {
-        // Solo mostrar en dispositivos táctiles
-        const isTouch = this.sys.game.device.input.touch;
+        // Detección robusta de táctil (varios fallbacks)
+        const isTouch = this.sys.game.device.input.touch ||
+                        ('ontouchstart' in window) ||
+                        (navigator.maxTouchPoints > 0) ||
+                        (window.innerWidth < 1024);
         if (!isTouch) return;
 
         const make = (x, y, label, hold, oneshot) => {
