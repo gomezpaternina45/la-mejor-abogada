@@ -238,6 +238,30 @@ class BootScene extends Phaser.Scene {
         bp.generateTexture('brick_chunk', 8, 8);
         bp.destroy();
 
+        // Planta piraña: cabeza roja con manchas blancas y boca dentada
+        const pl = this.add.graphics();
+        // Tallo verde
+        pl.fillStyle(0x2a8a1a, 1); pl.fillRect(18, 36, 8, 24);
+        pl.lineStyle(1, 0x0a3a08, 1); pl.strokeRect(18, 36, 8, 24);
+        // Cabeza bulbosa roja
+        pl.fillStyle(0xd83020, 1); pl.fillEllipse(22, 22, 36, 30);
+        pl.lineStyle(2, 0x4a0000, 1); pl.strokeEllipse(22, 22, 36, 30);
+        // Manchas blancas
+        pl.fillStyle(0xffffff, 1);
+        pl.fillCircle(12, 16, 4); pl.fillCircle(32, 16, 4);
+        pl.fillCircle(22, 28, 3); pl.fillCircle(14, 26, 3); pl.fillCircle(30, 26, 3);
+        // Boca abierta (rectángulo negro con dientes blancos)
+        pl.fillStyle(0x000000, 1); pl.fillRect(12, 18, 20, 8);
+        pl.fillStyle(0xffffff, 1);
+        pl.fillTriangle(13, 18, 17, 18, 15, 22);
+        pl.fillTriangle(19, 18, 23, 18, 21, 22);
+        pl.fillTriangle(25, 18, 29, 18, 27, 22);
+        pl.fillTriangle(15, 26, 19, 26, 17, 22);
+        pl.fillTriangle(21, 26, 25, 26, 23, 22);
+        pl.fillTriangle(27, 26, 31, 26, 29, 22);
+        pl.generateTexture('piranha', 44, 60);
+        pl.destroy();
+
         this.scene.start('Title');
     }
 }
@@ -384,6 +408,7 @@ class GameScene extends Phaser.Scene {
 
         // Tuberías
         this.pipes = this.physics.add.staticGroup();
+        this.piranhas = this.physics.add.group();
         this.warpPipeX = null;
         (lvl.pipes || []).forEach(p => {
             const topH = 24, bodyH = 32;
@@ -401,11 +426,26 @@ class GameScene extends Phaser.Scene {
             if (lvl.warpPipe === p.x) {
                 this.warpPipeX = p.x;
                 this.warpPipeTopY = topY - 12;
-                // Indicador visual ▼
                 this.add.text(p.x, topY - 28, '▼', {
                     fontFamily: FONT, fontSize: '20px', color: '#ffd54a',
                     stroke: '#000', strokeThickness: 3,
                 }).setOrigin(0.5);
+            }
+            // ¿Tiene planta piraña?
+            if (p.piranha) {
+                const pipeTopWorldY = topY - 12;        // top visible del tubo
+                const piranha = this.physics.add.sprite(p.x, pipeTopWorldY + 30, 'piranha')
+                    .setOrigin(0.5, 1);
+                piranha.body.setAllowGravity(false);
+                piranha.body.setSize(32, 50).setOffset(6, 8);
+                piranha.kind = 'piranha';
+                piranha.alive = true;
+                piranha.hiddenY = pipeTopWorldY + 60;   // escondida dentro del tubo
+                piranha.shownY  = pipeTopWorldY;        // afuera totalmente
+                piranha.y = piranha.hiddenY;
+                piranha.state = 'hidden';
+                piranha.timer = Phaser.Math.Between(800, 2000);
+                this.piranhas.add(piranha);
             }
         });
 
@@ -532,6 +572,12 @@ class GameScene extends Phaser.Scene {
         this.physics.add.collider(this.fireballs, this.qblocks,   fireballHit);
         this.physics.add.collider(this.fireballs, this.pipes,     fireballHit);
         this.physics.add.overlap(this.fireballs, this.enemies, (fb, en) => this.fireballHitEnemy(fb, en));
+        this.physics.add.overlap(this.player, this.piranhas, (pl, pi) => this.touchPiranha(pl, pi));
+        this.physics.add.overlap(this.fireballs, this.piranhas, (fb, pi) => {
+            if (!pi.alive) return;
+            fb.destroy();
+            this.killPiranha(pi);
+        });
 
         // Overlap con el mástil (se crea aquí porque player no existía cuando se construyó el mástil)
         if (this.flagpoleHitbox) {
@@ -639,11 +685,14 @@ class GameScene extends Phaser.Scene {
         this.bonusSpawnX = bonusStartX + 80;
         this.bonusEntryReturnX = (this.warpPipeX || 200) + 80;
 
-        // Fondo oscuro: enorme para cubrir TODO lo visible cuando estás en el bonus
+        // Fondo oscuro propio del bonus
+        const bonusBgHex = (lvl.bonus && lvl.bonus.bgColor) || '#0a0a18';
+        const bonusBgInt = parseInt(bonusBgHex.replace('#', ''), 16);
+        this.bonusBgColor = bonusBgHex;
         this.add.rectangle(
             (bonusStartX + bonusEndX) / 2, 800,
             Math.max(bonusW + 2000, 3000), 600,
-            0x0a0a18
+            bonusBgInt
         ).setDepth(-2);
 
         // Suelo subterráneo
@@ -1135,6 +1184,32 @@ class GameScene extends Phaser.Scene {
         this.takeHit();
     }
 
+    touchPiranha(player, piranha) {
+        if (!piranha.alive || this.gameOver || piranha.state === 'hidden') return;
+        // Estrella la mata
+        if (this.time.now < this.player.starUntil) {
+            this.killPiranha(piranha);
+            return;
+        }
+        if (this.invulnerable) return;
+        // No se puede aplastar (solo fuego o estrella)
+        this.takeHit();
+    }
+
+    killPiranha(piranha) {
+        piranha.alive = false;
+        this.score += 100;
+        window.SFX.stomp();
+        this.tweens.add({
+            targets: piranha,
+            alpha: 0,
+            scaleY: 0.2,
+            duration: 300,
+            onComplete: () => piranha.destroy(),
+        });
+        this.updateHUD();
+    }
+
     enemyVsEnemy(a, b) {
         const slidingA = a.kind === 'koopa' && a.state === 'sliding';
         const slidingB = b.kind === 'koopa' && b.state === 'sliding';
@@ -1249,24 +1324,44 @@ class GameScene extends Phaser.Scene {
     }
 
     startEndingScene() {
-        // Bloquear input de juego
         this.endingActive = true;
-        // Posicionar al príncipe a la derecha del jugador, esperándole frente al castillo
-        const px = this.player.x + 80;
-        const py = GROUND_Y - 50;
-        this.principe = this.add.sprite(px, py, 'principe').setOrigin(0.5, 1);
-        this.principe.setScale(this.player.scaleX);
-        // Aparece con tween
-        this.principe.setAlpha(0);
+        // Detener cámara y centrarla sobre el jugador
+        this.cameras.main.stopFollow();
+        const focusX = this.player.x;
+        this.cameras.main.pan(focusX, GAME_H / 2, 600, 'Sine.easeInOut');
+
+        // Príncipe al lado del jugador (mismo escala que el grande para verse igual)
+        const px = this.player.x + 70;
+        const py = GROUND_Y;
+        this.principe = this.add.sprite(px, py - 100, 'principe')
+            .setOrigin(0.5, 1)
+            .setScale(PLAYER_SCALE_BIG)
+            .setDepth(5)
+            .setAlpha(0);
+        this.principe.setFlipX(true);
+        this.player.setFlipX(false);
+        // Aparece bajando del cielo
         this.tweens.add({
             targets: this.principe,
             alpha: 1,
             y: py,
-            duration: 600,
+            duration: 700,
+            ease: 'Sine.easeOut',
         });
-        // Mira al jugador
-        this.principe.setFlipX(true);
-        this.player.setFlipX(false);
+        // Corazón flotante entre los dos
+        this.time.delayedCall(800, () => {
+            const heart = this.add.text(
+                (this.player.x + this.principe.x) / 2,
+                py - 110,
+                '❤',
+                { fontFamily: FONT, fontSize: '32px', color: '#ff5577',
+                  stroke: '#fff', strokeThickness: 2 }
+            ).setOrigin(0.5).setDepth(6);
+            this.tweens.add({
+                targets: heart, y: heart.y - 30, scale: 1.4,
+                yoyo: true, repeat: -1, duration: 700,
+            });
+        });
 
         // Mensaje "¡RESCATASTE AL PRÍNCIPE!"
         const banner = this.add.text(GAME_W / 2, 100, '¡RESCATASTE AL PRÍNCIPE!', {
@@ -1395,6 +1490,41 @@ class GameScene extends Phaser.Scene {
             if (it.update) it.update();
         });
 
+        // Plantas piraña: ciclo escondida → emergiendo → afuera → bajando
+        const dt = this.game.loop.delta;
+        this.piranhas.getChildren().forEach(pi => {
+            if (!pi.alive) return;
+            pi.timer -= dt;
+            // No emerger si el jugador está MUY cerca del tubo
+            const playerNear = Math.abs(this.player.x - pi.x) < 80;
+            if (pi.state === 'hidden') {
+                if (pi.timer <= 0 && !playerNear) {
+                    pi.state = 'rising';
+                    pi.timer = 1500;
+                }
+            } else if (pi.state === 'rising') {
+                pi.y -= 60 * dt / 1000;
+                if (pi.y <= pi.shownY) {
+                    pi.y = pi.shownY;
+                    pi.state = 'shown';
+                    pi.timer = 1500;
+                }
+            } else if (pi.state === 'shown') {
+                if (pi.timer <= 0) {
+                    pi.state = 'falling';
+                    pi.timer = 0;
+                }
+            } else if (pi.state === 'falling') {
+                pi.y += 60 * dt / 1000;
+                if (pi.y >= pi.hiddenY) {
+                    pi.y = pi.hiddenY;
+                    pi.state = 'hidden';
+                    pi.timer = Phaser.Math.Between(1500, 3000);
+                }
+            }
+            pi.body.updateFromGameObject();
+        });
+
         // Estrella: efecto arcoíris
         if (this.time.now < this.player.starUntil) {
             const tints = [0xff5555, 0xffaa00, 0xffee00, 0x55ff55, 0x55aaff, 0xaa55ff];
@@ -1511,7 +1641,7 @@ class GameScene extends Phaser.Scene {
         this.cameras.main.once('camerafadeoutcomplete', () => {
             // Cambiar bounds y fondo de la cámara a la zona bonus
             this.cameras.main.setBounds(0, 540, this.level.width, 560);
-            this.cameras.main.setBackgroundColor('#0a0a18');
+            this.cameras.main.setBackgroundColor(this.bonusBgColor || '#0a0a18');
             this.player.x = this.bonusSpawnX;
             this.player.y = this.bonusGroundY;
             this.player.setVelocity(0, 0);

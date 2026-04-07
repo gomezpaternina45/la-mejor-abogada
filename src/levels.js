@@ -51,12 +51,13 @@ const LEVELS = [
         ],
         pipes: [
             { x: 1800, h: 64 },
-            { x: 2900, h: 64 },
+            { x: 2900, h: 64, piranha: true },
             { x: 3700, h: 64 },
         ],
         warpPipe: 1800,
         bonus: {
             title: 'BONUS 1-1: GRUTA DE ORO',
+            bgColor: '#1a0a00',          // marrón oscuro como cueva
             width: 900,
             // Sin plataformas en bonus 1-1, todo en el suelo
             qblocks: [
@@ -136,14 +137,15 @@ const LEVELS = [
             { x: 4800, y: 290 },
         ],
         pipes: [
-            { x: 1700, h: 64 },
+            { x: 1700, h: 64, piranha: true },
             { x: 2600, h: 64 },
-            { x: 3500, h: 64 },
+            { x: 3500, h: 64, piranha: true },
             { x: 4400, h: 64 },
         ],
         warpPipe: 2600,
         bonus: {
             title: 'BONUS 1-2: CRIPTA SECRETA',
+            bgColor: '#0a0820',          // azul muy oscuro
             width: 1200,
             // Sin plataformas, solo bloques en el suelo bonus
             qblocks: [
@@ -236,40 +238,42 @@ const LEVELS = [
             { x: 5550, y: 290 },
         ],
         pipes: [
-            { x: 1000, h: 64 },
+            { x: 1000, h: 64, piranha: true },
             { x: 2000, h: 64 },
             { x: 3300, h: 64 },
-            { x: 4250, h: 64 },
-            { x: 4850, h: 64 },
+            { x: 4250, h: 64, piranha: true },
+            { x: 4850, h: 64, piranha: true },
         ],
         warpPipe: 3300,
         bonus: {
             title: 'BONUS 1-3: SALA DEL TESORO',
+            bgColor: '#1a0010',
             width: 1400,
-            // Sin plataformas: laberinto plano con muchos bloques
+            // 7 ? blocks distribuidos, intercalados con monedas de premio
             qblocks: [
                 { x: 100,  y: 130 },
-                { x: 300,  y: 130 },
-                { x: 500,  y: 130 },
-                { x: 700,  y: 130 },
-                { x: 900,  y: 130 },
-                { x: 1100, y: 130 },
                 { x: 1300, y: 130 },
+                { x: 250,  y: 130 },
+                { x: 1150, y: 130 },
+                { x: 700,  y: 130 },
+                { x: 450,  y: 130 },
+                { x: 950,  y: 130 },
+            ],
+            // Pirámide central de bloques sólidos como "altar del tesoro"
+            solids: [
+                { x: 670, y: 50 }, { x: 702, y: 50 }, { x: 734, y: 50 },
+                { x: 686, y: 80 }, { x: 718, y: 80 },
             ],
             bricks: [
-                { x: 200, y: 130 }, { x: 232, y: 130 },
-                { x: 400, y: 130 }, { x: 432, y: 130 },
-                { x: 600, y: 130 }, { x: 632, y: 130 },
-                { x: 800, y: 130 }, { x: 832, y: 130 },
-                { x: 1000, y: 130 }, { x: 1032, y: 130 },
-                { x: 1200, y: 130 }, { x: 1232, y: 130 },
+                { x: 380, y: 130 }, { x: 412, y: 130 },
+                { x: 1020, y: 130 }, { x: 1052, y: 130 },
             ],
             coins: [
-                [100, 30], [200, 30], [300, 30], [400, 30], [500, 30],
-                [600, 30], [700, 30], [800, 30], [900, 30], [1000, 30],
-                [1100, 30], [1200, 30], [1300, 30],
-                [100, 80], [300, 80], [500, 80], [700, 80],
-                [900, 80], [1100, 80], [1300, 80],
+                [100, 30], [150, 30], [200, 30], [300, 30], [350, 30],
+                [400, 30], [550, 30], [600, 30], [800, 30], [850, 30],
+                [900, 30], [1000, 30], [1100, 30], [1200, 30], [1250, 30], [1300, 30],
+                [100, 80], [250, 80], [450, 80], [950, 80], [1150, 80], [1300, 80],
+                [702, 30],
                 [50, 60], [50, 100], [50, 140],
                 [1350, 60], [1350, 100], [1350, 140],
             ],
