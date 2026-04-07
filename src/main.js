@@ -568,7 +568,8 @@ class GameScene extends Phaser.Scene {
         this.fireKey  = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F);
         this.input.keyboard.on('keydown-M', () => { window.SFX.muted = !window.SFX.muted; });
 
-        // Controles táctiles para móvil
+        // Controles táctiles para móvil — habilitar multitouch (3 dedos máx)
+        this.input.addPointer(3);
         this.touchInput = { left: false, right: false, down: false, jumpPressed: false, firePressed: false };
         this.createTouchControls();
 
