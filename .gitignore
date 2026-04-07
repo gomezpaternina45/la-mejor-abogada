@@ -1,0 +1,17 @@
+# Archivos fuente de Gemini (no necesarios para el juego)
+Gemini_Generated_Image_*.png
+
+# Scripts de extracción (privados)
+tools/
+
+# Memoria de Claude
+memory/
+
+# Sistema
+.DS_Store
+Thumbs.db
+*.log
+
+# Editor
+.vscode/
+.idea/
