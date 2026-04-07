@@ -588,38 +588,41 @@ class GameScene extends Phaser.Scene {
                         (window.innerWidth < 1024);
         if (!isTouch) return;
 
+        const r = 44;
         const make = (x, y, label, hold, oneshot) => {
-            const r = 38;
-            const bg = this.add.circle(x, y, r, 0xffffff, 0.25)
-                .setStrokeStyle(3, 0xffffff, 0.6)
+            const bg = this.add.circle(x, y, r, 0xffffff, 0.3)
+                .setStrokeStyle(3, 0xffffff, 0.7)
                 .setScrollFactor(0)
                 .setDepth(50)
                 .setInteractive({ useHandCursor: false });
-            const txt = this.add.text(x, y, label, {
-                fontFamily: FONT, fontSize: '26px', color: '#ffffff',
+            this.add.text(x, y, label, {
+                fontFamily: FONT, fontSize: '28px', color: '#ffffff',
                 stroke: '#000', strokeThickness: 3,
             }).setOrigin(0.5).setScrollFactor(0).setDepth(51);
             bg.on('pointerdown', () => {
                 if (hold)    this.touchInput[hold] = true;
                 if (oneshot) this.touchInput[oneshot] = true;
-                bg.setFillStyle(0xffffff, 0.45);
+                bg.setFillStyle(0xffffff, 0.5);
             });
             const release = () => {
                 if (hold) this.touchInput[hold] = false;
-                bg.setFillStyle(0xffffff, 0.25);
+                bg.setFillStyle(0xffffff, 0.3);
             };
             bg.on('pointerup', release);
             bg.on('pointerout', release);
             bg.on('pointerupoutside', release);
         };
 
+        // Posiciones con margen de seguridad
+        const baseY = GAME_H - 110;     // 110 px desde abajo
+        const upY   = GAME_H - 200;     // botón ▼ más arriba
         // Lado izquierdo: D-pad
-        make(70,  GAME_H - 70, '◀', 'left',  null);
-        make(170, GAME_H - 70, '▶', 'right', null);
-        make(120, GAME_H - 150, '▼', 'down',  null);
+        make(70,  baseY, '◀', 'left',  null);
+        make(180, baseY, '▶', 'right', null);
+        make(125, upY,   '▼', 'down',  null);
         // Lado derecho: A=salto, B=fuego
-        make(GAME_W - 70,  GAME_H - 70,  'A', null, 'jumpPressed');
-        make(GAME_W - 170, GAME_H - 70,  'B', null, 'firePressed');
+        make(GAME_W - 70,  baseY, 'A', null, 'jumpPressed');
+        make(GAME_W - 180, baseY, 'B', null, 'firePressed');
     }
 
     buildBonusZone(lvl) {

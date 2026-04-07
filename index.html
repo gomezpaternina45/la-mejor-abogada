@@ -62,6 +62,10 @@
             #rotate { display: flex; }
             #help   { display: none; }
         }
+        /* Ocultar el texto de ayuda en cualquier dispositivo táctil */
+        @media (hover: none) and (pointer: coarse) {
+            #help { display: none; }
+        }
     </style>
 </head>
 <body>
