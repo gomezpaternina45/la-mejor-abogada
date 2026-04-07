@@ -884,7 +884,7 @@ class GameScene extends Phaser.Scene {
 
     createCastle(gx) {
         const baseY = GROUND_Y;
-        const W = 180, H = 160;
+        const W = 140, H = 110;
         const left = gx - W / 2;
         const right = gx + W / 2;
         const wallColor = 0xc14848;
@@ -895,56 +895,50 @@ class GameScene extends Phaser.Scene {
 
         // Almenas superiores (5 dientes)
         for (let i = 0; i < 5; i++) {
-            this.add.rectangle(left + 20 + i * 35, baseY - H - 8, 22, 18, wallColor)
+            this.add.rectangle(left + 16 + i * 27, baseY - H - 6, 18, 14, wallColor)
                 .setStrokeStyle(2, stroke);
         }
 
-        // Dos torres laterales más altas
-        const towerW = 36, towerH = 80;
-        const tx1 = left + 22, tx2 = right - 22;
+        // Dos torres laterales más altas pero compactas
+        const towerW = 28, towerH = 56;
+        const tx1 = left + 18, tx2 = right - 18;
         this.add.rectangle(tx1, baseY - H - towerH / 2, towerW, towerH, wallColor)
             .setStrokeStyle(3, stroke);
         this.add.rectangle(tx2, baseY - H - towerH / 2, towerW, towerH, wallColor)
             .setStrokeStyle(3, stroke);
-        // Almenas de las torres
+        // Almenas pequeñas en torres
         for (let i = 0; i < 2; i++) {
-            this.add.rectangle(tx1 - 10 + i * 20, baseY - H - towerH - 6, 14, 12, wallColor)
+            this.add.rectangle(tx1 - 8 + i * 16, baseY - H - towerH - 5, 12, 10, wallColor)
                 .setStrokeStyle(2, stroke);
-            this.add.rectangle(tx2 - 10 + i * 20, baseY - H - towerH - 6, 14, 12, wallColor)
+            this.add.rectangle(tx2 - 8 + i * 16, baseY - H - towerH - 5, 12, 10, wallColor)
                 .setStrokeStyle(2, stroke);
         }
         // Ventanas de las torres
-        this.add.rectangle(tx1, baseY - H - towerH / 2 + 5, 10, 16, 0x000000);
-        this.add.rectangle(tx2, baseY - H - towerH / 2 + 5, 10, 16, 0x000000);
+        this.add.rectangle(tx1, baseY - H - towerH / 2, 8, 12, 0x000000);
+        this.add.rectangle(tx2, baseY - H - towerH / 2, 8, 12, 0x000000);
 
-        // Puerta (cuadrada pero con arco simulado por triángulos)
-        const doorW = 38, doorH = 56;
+        // Puerta
+        const doorW = 30, doorH = 44;
         this.add.rectangle(gx, baseY - doorH / 2, doorW, doorH, 0x000000);
-        // Cuernos del arco simulados con triángulos negros
-        this.add.triangle(gx - doorW / 2, baseY - doorH + 8,
-            0, 0, 8, 0, 0, 8, 0x000000);
-        this.add.triangle(gx + doorW / 2, baseY - doorH + 8,
-            0, 0, -8, 0, 0, 8, 0x000000);
         this.add.rectangle(gx, baseY - doorH / 2, doorW, doorH, 0x000000, 0)
-            .setStrokeStyle(3, stroke);
+            .setStrokeStyle(2, stroke);
 
         // Ventanas del cuerpo
-        this.add.rectangle(gx - 50, baseY - 110, 16, 22, 0x000000);
-        this.add.rectangle(gx + 50, baseY - 110, 16, 22, 0x000000);
-        this.add.rectangle(gx, baseY - H + 30, 18, 22, 0x000000);
+        this.add.rectangle(gx - 38, baseY - 75, 12, 16, 0x000000);
+        this.add.rectangle(gx + 38, baseY - 75, 12, 16, 0x000000);
 
-        // Asta + bandera en torre central (más alta)
-        const flagPoleY = baseY - H - towerH - 60;
-        this.add.rectangle(gx, flagPoleY + 30, 4, 80, 0xeeeeee);
+        // Asta + bandera en torre central
+        const flagPoleY = baseY - H - towerH - 44;
+        this.add.rectangle(gx, flagPoleY + 24, 3, 64, 0xeeeeee);
         this.add.triangle(
-            gx + 14, flagPoleY + 12,
-            0, 0, 28, 12, 0, 24,
+            gx + 12, flagPoleY + 10,
+            0, 0, 24, 10, 0, 20,
             0xffd54a
         ).setStrokeStyle(2, 0xb37a00);
 
         // Cartel "META" sobre la puerta
-        this.add.text(gx, baseY - doorH - 18, 'META', {
-            fontFamily: FONT, fontSize: '14px', color: '#ffd54a',
+        this.add.text(gx, baseY - doorH - 14, 'META', {
+            fontFamily: FONT, fontSize: '12px', color: '#ffd54a',
             stroke: '#000', strokeThickness: 3,
         }).setOrigin(0.5);
     }
@@ -1325,21 +1319,22 @@ class GameScene extends Phaser.Scene {
 
     startEndingScene() {
         this.endingActive = true;
-        // Detener cámara y centrarla sobre el jugador
+        // Detener cámara y centrarla entre el jugador y donde aparecerá el príncipe
         this.cameras.main.stopFollow();
-        const focusX = this.player.x;
-        this.cameras.main.pan(focusX, GAME_H / 2, 600, 'Sine.easeInOut');
+        // Mover al jugador un poco a la izquierda para que ambos quepan centrados
+        const focusX = this.player.x + 20;
+        this.cameras.main.pan(focusX, GAME_H / 2 - 30, 700, 'Sine.easeInOut');
 
-        // Príncipe al lado del jugador (mismo escala que el grande para verse igual)
-        const px = this.player.x + 70;
+        // Príncipe a la IZQUIERDA del jugador (mira a la derecha)
+        const px = this.player.x - 70;
         const py = GROUND_Y;
         this.principe = this.add.sprite(px, py - 100, 'principe')
             .setOrigin(0.5, 1)
             .setScale(PLAYER_SCALE_BIG)
             .setDepth(5)
             .setAlpha(0);
-        this.principe.setFlipX(true);
-        this.player.setFlipX(false);
+        this.principe.setFlipX(false);   // mira a la derecha (hacia la heroína)
+        this.player.setFlipX(true);      // heroína mira a la izquierda (hacia el príncipe)
         // Aparece bajando del cielo
         this.tweens.add({
             targets: this.principe,
