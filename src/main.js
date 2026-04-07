@@ -579,6 +579,8 @@ class GameScene extends Phaser.Scene {
         this.flagWalking = false;
         this.inBonus = false;
         this.warping = false;
+        this.lastSafeX = 80;
+        this.lastSafeY = GROUND_Y - 50;
     }
 
     createTouchControls() {
@@ -1159,16 +1161,35 @@ class GameScene extends Phaser.Scene {
             window.SFX.hurt();
             return;
         }
-        // small → pierdes vida
+        // small → pierdes vida y respawneas
+        this.loseLifeAndRespawn();
+    }
+
+    loseLifeAndRespawn() {
+        if (this.gameOver) return;
         this.lives -= 1;
         this.updateHUD();
         window.SFX.hurt();
         if (this.lives <= 0) {
             this.die();
-        } else {
-            this.startInvulnerable();
-            this.player.setVelocityY(-300);
+            return;
         }
+        // Respawn en el último punto seguro, sin reiniciar el nivel
+        this.player.powerState = 'small';
+        this.player.applyScale();
+        this.player.clearTint();
+        this.player.setAlpha(1);
+        this.player.setVelocity(0, 0);
+        if (this.inBonus) {
+            // Salir del bonus al respawnear
+            this.cameras.main.setBounds(0, 0, this.level.width, GAME_H);
+            this.cameras.main.setBackgroundColor(this.level.bgColor);
+            this.inBonus = false;
+        }
+        this.player.x = this.lastSafeX;
+        this.player.y = this.lastSafeY;
+        this.player.body.checkCollision.none = false;
+        this.startInvulnerable();
     }
 
     startInvulnerable() {
@@ -1352,9 +1373,19 @@ class GameScene extends Phaser.Scene {
         if (down && onWarpEntry) this.warpToBonus();
         else if (down && onWarpExit) this.warpFromBonus();
 
-        // Caída al vacío => muerte directa (excepto en zona bonus)
-        if (!this.inBonus && this.player.y > GAME_H + 60 && !this.gameOver) this.die();
-        if (this.inBonus && this.player.y > 1100 && !this.gameOver) this.die();
+        // Tracking del último punto seguro (en suelo, en superficie)
+        if (onFloor && !this.inBonus && this.player.y < GAME_H - 20) {
+            this.lastSafeX = this.player.x;
+            this.lastSafeY = this.player.y - 30;
+        }
+
+        // Caída al vacío => pierdes UNA vida y respawneas (game over solo si era la última)
+        if (!this.inBonus && this.player.y > GAME_H + 60 && !this.gameOver) {
+            this.loseLifeAndRespawn();
+        }
+        if (this.inBonus && this.player.y > 1100 && !this.gameOver) {
+            this.loseLifeAndRespawn();
+        }
     }
 
     warpToBonus() {
